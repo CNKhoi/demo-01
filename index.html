@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sổ tay bệnh viện - Demo</title>
+  <style>
+    :root {
+      --bg: #edf8f8;
+      --card: rgba(255,255,255,.78);
+      --card-strong: rgba(255,255,255,.92);
+      --text: #123243;
+      --muted: #5e7b86;
+      --primary: #0b8f8a;
+      --primary-2: #42bfb2;
+      --accent: #dff8f4;
+      --danger: #e45d5d;
+      --warning: #f2b94b;
+      --shadow: 0 14px 40px rgba(10, 76, 91, 0.14);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --border: rgba(11, 143, 138, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(66,191,178,.22), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(173,233,225,.32), transparent 28%),
+        linear-gradient(180deg, #f7fdfd 0%, #e8f6f5 100%);
+      overflow: hidden;
+    }
+
+    .app {
+      position: relative;
+      width: min(430px, 100%);
+      height: 100dvh;
+      margin: 0 auto;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.08));
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.28);
+    }
+
+    .bg-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(8px);
+      pointer-events: none;
+      opacity: .8;
+    }
+    .orb-1 { width: 180px; height: 180px; background: rgba(66,191,178,.2); top: -20px; right: -50px; }
+    .orb-2 { width: 160px; height: 160px; background: rgba(209,245,240,.8); bottom: 80px; left: -55px; }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(108%);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform .42s ease, opacity .3s ease;
+      padding: 18px 18px 96px;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .screen::-webkit-scrollbar { display: none; }
+    .screen.active {
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 2;
+    }
+    .screen.exit-left { transform: translateX(-16%); opacity: 0; }
+
+    .cover {
+      justify-content: space-between;
+      padding-top: 28px;
+      padding-bottom: 28px;
+    }
+
+    .cover-card {
+      position: relative;
+      border-radius: 34px;
+      padding: 28px 24px;
+      min-height: 68dvh;
+      background:
+        linear-gradient(160deg, rgba(8,123,132,.97), rgba(71,189,175,.96)),
+        linear-gradient(180deg, #0b8f8a, #6fd6c9);
+      box-shadow: 0 18px 50px rgba(11, 98, 103, .28);
+      overflow: hidden;
+      color: #fff;
+    }
+
+    .cover-card::before,
+    .cover-card::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,.12);
+    }
+    .cover-card::before { width: 220px; height: 220px; top: -80px; right: -40px; }
+    .cover-card::after { width: 180px; height: 180px; left: -65px; bottom: -70px; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.14);
+      backdrop-filter: blur(8px);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
+
+    .cover-title {
+      margin: 22px 0 12px;
+      font-size: clamp(30px, 7vw, 40px);
+      line-height: 1.08;
+      font-weight: 900;
+      letter-spacing: -.5px;
+    }
+
+    .cover-sub {
+      margin: 0;
+      color: rgba(255,255,255,.92);
+      line-height: 1.6;
+      font-size: 15px;
+      max-width: 305px;
+    }
+
+    .cover-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.16);
+      font-weight: 900;
+      font-size: 18px;
+    }
+
+    .brand-text small,
+    .cover-note { color: rgba(255,255,255,.86); }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .primary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #ffffff, #ecffff);
+      color: var(--primary);
+      font-weight: 800;
+      box-shadow: 0 10px 24px rgba(7, 63, 78, .18);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .primary-btn:active { transform: scale(.98); }
+
+    .ghost-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.66);
+      color: var(--text);
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,.65);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      padding-top: 2px;
+      backdrop-filter: blur(8px);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: var(--card-strong);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      flex: 0 0 auto;
+    }
+
+    .title-wrap { min-width: 0; }
+    .eyebrow {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+    .title {
+      margin: 0;
+      font-size: 20px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-wrap {
+      margin-bottom: 18px;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card-strong);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: 20px;
+      padding: 14px 16px;
+    }
+    .search-box input {
+      border: 0;
+      outline: 0;
+      background: transparent;
+      width: 100%;
+      font-size: 15px;
+      color: var(--text);
+    }
+    .search-box input::placeholder { color: #88a0aa; }
+    .search-helper {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .hero-card,
+    .feature-card,
+    .page-card,
+    .section,
+    .detail-card,
+    .schedule-card,
+    .search-result-card,
+    .notice-card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.56);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius-xl);
+    }
+
+    .hero-card {
+      padding: 18px;
+      margin-bottom: 18px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+    }
+    .hero-card h2 { margin: 0 0 8px; font-size: 22px; line-height: 1.2; }
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .hero-pill {
+      width: 74px;
+      height: 74px;
+      border-radius: 24px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      color: white;
+      font-size: 30px;
+      box-shadow: 0 14px 30px rgba(11,143,138,.26);
+    }
+
+    .notice-card {
+      padding: 16px;
+      margin-bottom: 18px;
+      border-left: 6px solid var(--primary);
+    }
+    .notice-card h3 { margin: 0 0 8px; font-size: 16px; }
+    .notice-card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 12px;
+    }
+    .section-head h3 { margin: 0; font-size: 17px; }
+    .section-head span { color: var(--muted); font-size: 13px; white-space: nowrap; }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .quick-card {
+      padding: 16px;
+      border-radius: 22px;
+      background: var(--card-strong);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      text-align: left;
+      transition: transform .18s ease;
+    }
+    .quick-card:active { transform: scale(.98); }
+    .quick-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 21px;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #e5fbf7, #ffffff);
+      box-shadow: inset 0 0 0 1px rgba(11,143,138,.08);
+    }
+    .quick-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+    .quick-card small {
+      color: var(--muted);
+      line-height: 1.45;
+      display: block;
+    }
+
+    .feature-card,
+    .page-card,
+    .schedule-card,
+    .search-result-card {
+      padding: 16px;
+    }
+
+    .feature-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .mini-icon,
+    .page-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 21px;
+      background: linear-gradient(135deg, rgba(11,143,138,.14), rgba(255,255,255,.82));
+      color: var(--primary);
+    }
+
+    .feature-card h4,
+    .page-card h4,
+    .detail-card h2,
+    .schedule-card h4,
+    .search-result-card h4 {
+      margin: 0 0 6px;
+    }
+    .feature-card p,
+    .page-card p,
+    .detail-card p,
+    .list-item p,
+    .schedule-card p,
+    .search-result-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .chev {
+      color: #8aa9ad;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .page-list,
+    .schedule-list,
+    .search-results {
+      display: grid;
+      gap: 12px;
+    }
+
+    .page-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      transition: transform .18s ease;
+    }
+    .page-card:active { transform: scale(.985); }
+
+    .section {
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .chip {
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid rgba(11,143,138,.08);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .detail-card {
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .detail-badge {
+      display: inline-flex;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(11,143,138,.09);
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .list-box {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .list-item {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.84);
+      border: 1px solid rgba(11,143,138,.08);
+    }
+    .list-item strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .result-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .result-title h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+    .result-count {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .search-result-card {
+      text-align: left;
+      border: 1px solid rgba(11,143,138,.1);
+    }
+    .search-meta {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(11,143,138,.08);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    mark {
+      background: #fff2b8;
+      color: inherit;
+      padding: 0 .1em;
+      border-radius: 4px;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 12px;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 10px;
+      border-radius: 24px;
+      background: rgba(255,255,255,.8);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,.68);
+      box-shadow: 0 16px 38px rgba(25,55,110,.13);
+    }
+
+    .nav-item {
+      min-height: 58px;
+      border-radius: 18px;
+      background: transparent;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      transition: background .18s ease, color .18s ease, transform .18s ease;
+    }
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(11,143,138,.12), rgba(66,191,178,.16));
+      color: var(--primary);
+    }
+    .nav-item:active { transform: scale(.97); }
+    .nav-item .nav-ico { font-size: 20px; }
+
+    .empty {
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 360px) {
+      .quick-grid { grid-template-columns: 1fr; }
+      .cover-card { min-height: 64dvh; }
+      .cover-title { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <section class="screen cover active" data-screen="cover">
+      <div class="cover-card">
+        <div>
+          <span class="badge">🏥 Demo sổ tay bệnh viện</span>
+          <h1 class="cover-title">Sổ tay<br />bệnh viện</h1>
+          <p class="cover-sub">
+            Mẫu giao diện tra cứu nhanh dành cho nhân viên, khoa phòng hoặc người dùng nội bộ.
+            Tập trung vào quy trình, đầu mối liên hệ, hướng dẫn và tìm kiếm nội dung trọng tâm.
+          </p>
+        </div>
+
+        <div>
+          <div class="cover-footer">
+            <div class="brand-box">
+              <div class="brand-mark">BV</div>
+              <div class="brand-text">
+                <strong>Hospital Handbook</strong><br />
+                <small>Phiên bản demo nội bộ</small>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:12px; align-items:center; justify-content:space-between; margin-top:18px;">
+            <small class="cover-note">Thiết kế ưu tiên điện thoại, mượt và dễ tra cứu</small>
+            <button class="primary-btn" data-go="home">Mở sổ tay →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="home">
+      <div class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn" data-go="cover" aria-label="Quay lại">←</button>
+          <div class="title-wrap">
+            <span class="eyebrow">Trang chính</span>
+            <h1 class="title">Sổ tay bệnh viện</h1>
+          </div>
+        </div>
+        <button class="icon-btn" data-go="pages" aria-label="Mục lục">☰</button>
+      </div>
+
+      <div class="search-wrap">
+        <div class="search-box">
+          <span>🔎</span>
+          <input id="searchInput" type="text" placeholder="Tìm: cấp cứu, kiểm soát nhiễm khuẩn, trực, học viên..." />
+        </div>
+        <div class="search-helper">Tìm trực tiếp trong tiêu đề, mô tả, tag và từng nội dung con bên trong mỗi mục.</div>
+      </div>
+
+      <div id="searchResultsSection" style="display:none; margin-bottom:18px;">
+        <div class="result-title">
+          <h3>Kết quả tìm kiếm</h3>
+          <span class="result-count" id="searchCount">0 kết quả</span>
+        </div>
+        <div class="search-results" id="searchResults"></div>
+      </div>
+
+      <div id="homeDefaultContent">
+        <div class="hero-card">
+          <div>
+            <h2>Tra cứu nhanh quy trình và thông tin nội bộ</h2>
+            <p>
+              Giao diện mẫu cho sổ tay bệnh viện: điều hướng rõ ràng, nội dung cô đọng,
+              thao tác ít chạm và dễ tìm đúng thông tin cần thiết.
+            </p>
+          </div>
+          <div class="hero-pill">🏥</div>
+        </div>
+
+        <div class="notice-card">
+          <h3>Thông báo mẫu</h3>
+          <p>Đây là bản demo nội dung. Bạn có thể thay bằng quy trình thật, số nội bộ, phân luồng tiếp nhận, lịch trực, sơ đồ khoa phòng hoặc quy định chuyên môn.</p>
+        </div>
+
+        <div class="section-head">
+          <h3>Truy cập nhanh</h3>
+          <span>6 mục trọng tâm</span>
+        </div>
+        <div class="quick-grid" id="quickGrid"></div>
+
+        <div class="section-head">
+          <h3>Nội dung nổi bật</h3>
+          <span>Xem nhanh các mục chính</span>
+        </div>
+        <div id="featureList"></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="pages">
+      <div class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn" data-go="home">←</button>
+          <div class="title-wrap">
+            <span class="eyebrow">Điều hướng</span>
+            <h1 class="title">Danh mục nội dung</h1>
+          </div>
+        </div>
+        <button class="ghost-btn" data-go="home">Trang chủ</button>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <h3>Tất cả chuyên mục</h3>
+          <span id="pageCount">0 mục</span>
+        </div>
+        <div class="page-list" id="pageList"></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="detail">
+      <div class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn" id="detailBackBtn">←</button>
+          <div class="title-wrap">
+            <span class="eyebrow">Chi tiết</span>
+            <h1 class="title" id="detailTitleTop">Nội dung</h1>
+          </div>
+        </div>
+        <button class="ghost-btn" data-go="pages">Mục lục</button>
+      </div>
+
+      <div class="detail-card">
+        <div class="detail-badge" id="detailBadge">Chuyên mục</div>
+        <h2 id="detailTitle">Tiêu đề</h2>
+        <p id="detailDesc">Mô tả</p>
+        <div class="chips" id="detailTags"></div>
+        <div class="list-box" id="detailItems"></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="schedule">
+      <div class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn" data-go="home">←</button>
+          <div class="title-wrap">
+            <span class="eyebrow">Gợi ý triển khai</span>
+            <h1 class="title">Phần nên có thêm</h1>
+          </div>
+        </div>
+        <button class="ghost-btn" data-go="pages">Xem mục lục</button>
+      </div>
+
+      <div class="schedule-list" id="scheduleList"></div>
+    </section>
+
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-go="home">
+        <span class="nav-ico">🏠</span>
+        <span>Trang chủ</span>
+      </button>
+      <button class="nav-item" data-go="pages">
+        <span class="nav-ico">📚</span>
+        <span>Danh mục</span>
+      </button>
+      <button class="nav-item" data-go="schedule">
+        <span class="nav-ico">✨</span>
+        <span>Mở rộng</span>
+      </button>
+      <button class="nav-item" data-go="cover">
+        <span class="nav-ico">🩺</span>
+        <span>Bìa</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    const handbookPages = [
+      {
+        id: 'gioi-thieu',
+        icon: '🏥',
+        category: 'Tổng quan',
+        title: 'Giới thiệu bệnh viện',
+        description: 'Thông tin khái quát, định hướng phục vụ, nguyên tắc ứng xử và định hướng chất lượng.',
+        tags: ['Tầm nhìn', 'Chất lượng', 'Phục vụ'],
+        items: [
+          { title: 'Sứ mệnh', text: 'Cung cấp dịch vụ khám chữa bệnh an toàn, hiệu quả, lấy người bệnh làm trung tâm.' },
+          { title: 'Giá trị cốt lõi', text: 'Chuyên nghiệp, trách nhiệm, phối hợp, cải tiến liên tục và giao tiếp chuẩn mực.' },
+          { title: 'Ứng xử chung', text: 'Tôn trọng người bệnh, đồng nghiệp và tuân thủ quy định về thái độ phục vụ trong toàn bệnh viện.' }
+        ]
+      },
+      {
+        id: 'quy-trinh-cap-cuu',
+        icon: '🚑',
+        category: 'Quy trình',
+        title: 'Quy trình tiếp nhận cấp cứu',
+        description: 'Hướng dẫn các bước tiếp nhận ban đầu đối với người bệnh cấp cứu tại khu vực cấp cứu.',
+        tags: ['Cấp cứu', 'Tiếp nhận', 'Ưu tiên đỏ'],
+        items: [
+          { title: 'Bước 1: Tiếp nhận nhanh', text: 'Xác định tình trạng người bệnh, ưu tiên xử trí ngay với trường hợp nguy kịch, không để chậm can thiệp.' },
+          { title: 'Bước 2: Phân luồng', text: 'Phân loại mức độ ưu tiên, chuyển đúng khu vực xử trí, đồng thời ghi nhận thông tin ban đầu.' },
+          { title: 'Bước 3: Báo bác sĩ trực', text: 'Thông báo ngay cho bác sĩ/kíp trực liên quan để phối hợp xử trí và theo dõi sát diễn biến.' },
+          { title: 'Bước 4: Hoàn tất hồ sơ ban đầu', text: 'Cập nhật thời gian tiếp nhận, dấu hiệu sinh tồn, can thiệp đã thực hiện và đầu mối người nhà.' }
+        ]
+      },
+      {
+        id: 'nhiem-khuan',
+        icon: '🧼',
+        category: 'An toàn',
+        title: 'Kiểm soát nhiễm khuẩn cơ bản',
+        description: 'Các nguyên tắc nền tảng giúp giảm nguy cơ lây nhiễm trong môi trường bệnh viện.',
+        tags: ['Rửa tay', 'PPE', 'Buồng bệnh'],
+        items: [
+          { title: 'Vệ sinh tay', text: 'Thực hiện đúng thời điểm và đúng kỹ thuật trước, trong và sau khi tiếp xúc người bệnh.' },
+          { title: 'Phương tiện phòng hộ', text: 'Sử dụng khẩu trang, găng, áo choàng hoặc kính bảo hộ phù hợp từng tình huống chuyên môn.' },
+          { title: 'Xử lý chất thải', text: 'Bỏ đúng nơi quy định, không trộn lẫn rác y tế, luôn tuân thủ phân loại ngay tại nguồn.' },
+          { title: 'Bề mặt tiếp xúc', text: 'Làm sạch định kỳ các vị trí thường xuyên chạm vào để hạn chế lây truyền chéo.' }
+        ]
+      },
+      {
+        id: 'lich-truc',
+        icon: '🕒',
+        category: 'Nhân sự',
+        title: 'Quy định trực và bàn giao',
+        description: 'Một số nguyên tắc mẫu về ca trực, bàn giao người bệnh và xử lý tình huống phát sinh.',
+        tags: ['Ca trực', 'Bàn giao', 'Theo dõi'],
+        items: [
+          { title: 'Đúng giờ nhận trực', text: 'Có mặt trước giờ giao ca để nắm tình hình buồng bệnh, các ca cần theo dõi sát và chỉ định còn tồn.' },
+          { title: 'Bàn giao đầy đủ', text: 'Nêu rõ ca nặng, thuốc/chỉ định đang thực hiện, diễn biến bất thường và việc cần tiếp tục.' },
+          { title: 'Liên hệ hỗ trợ', text: 'Khi vượt khả năng xử trí hoặc có diễn biến nặng, phải báo ngay người phụ trách hoặc lãnh đạo trực.' }
+        ]
+      },
+      {
+        id: 'so-noi-bo',
+        icon: '☎️',
+        category: 'Liên hệ',
+        title: 'Số nội bộ và đầu mối hỗ trợ',
+        description: 'Danh sách demo các đầu mối thường dùng để liên hệ nhanh trong bệnh viện.',
+        tags: ['Nội bộ', 'Liên hệ', 'Hỗ trợ'],
+        items: [
+          { title: 'Cấp cứu', text: 'Máy lẻ: 115 hoặc số nội bộ khu cấp cứu để xử lý tình huống cần hỗ trợ ngay.' },
+          { title: 'CNTT', text: 'Liên hệ bộ phận CNTT khi lỗi phần mềm, mạng nội bộ, máy in hoặc tài khoản hệ thống.' },
+          { title: 'Phòng công tác xã hội', text: 'Hỗ trợ trường hợp người bệnh cần tư vấn, hỗ trợ truyền thông hoặc hoàn cảnh đặc biệt.' },
+          { title: 'Bảo vệ', text: 'Liên hệ khi có tình huống mất an ninh trật tự, hỗ trợ điều phối hoặc kiểm soát ra vào.' }
+        ]
+      },
+      {
+        id: 'quy-dinh-nguoi-benh',
+        icon: '🛏️',
+        category: 'Phục vụ',
+        title: 'Hướng dẫn người bệnh nội trú',
+        description: 'Một số nội dung mẫu để hướng dẫn người bệnh và thân nhân khi nhập viện điều trị.',
+        tags: ['Nội trú', 'Thân nhân', 'Hướng dẫn'],
+        items: [
+          { title: 'Giờ thăm bệnh', text: 'Thực hiện đúng khung giờ quy định, hạn chế tập trung đông người tại buồng bệnh.' },
+          { title: 'Giữ vệ sinh chung', text: 'Không xả rác bừa bãi, tuân thủ hướng dẫn phân loại rác và giữ môi trường điều trị sạch sẽ.' },
+          { title: 'An toàn tài sản', text: 'Khuyến cáo người bệnh và thân nhân tự bảo quản tư trang có giá trị.' },
+          { title: 'Phối hợp điều trị', text: 'Người bệnh cần dùng thuốc đúng hướng dẫn, báo ngay nhân viên y tế khi có dấu hiệu bất thường.' }
+        ]
+      },
+      {
+        id: 'dao-tao',
+        icon: '📘',
+        category: 'Đào tạo',
+        title: 'Hướng dẫn học viên - thực tập',
+        description: 'Nội dung cơ bản dành cho học viên, sinh viên thực tập hoặc cán bộ mới nhận công tác.',
+        tags: ['Thực tập', 'Cán bộ mới', 'Hướng dẫn'],
+        items: [
+          { title: 'Tuân thủ phân công', text: 'Đi đúng khoa phòng, đúng người hướng dẫn và không tự ý can thiệp chuyên môn ngoài phạm vi cho phép.' },
+          { title: 'Trang phục và thẻ', text: 'Mang thẻ đầy đủ, trang phục gọn gàng, phù hợp môi trường bệnh viện.' },
+          { title: 'Bảo mật thông tin', text: 'Không tự ý chia sẻ hình ảnh, hồ sơ hoặc dữ liệu người bệnh ra bên ngoài.' }
+        ]
+      },
+      {
+        id: 'su-co-y-khoa',
+        icon: '⚠️',
+        category: 'An toàn',
+        title: 'Báo cáo sự cố y khoa',
+        description: 'Nguyên tắc mẫu khi phát hiện sự cố, nguy cơ sự cố hoặc sai sót cần báo cáo.',
+        tags: ['Sự cố', 'An toàn người bệnh', 'Báo cáo'],
+        items: [
+          { title: 'Báo ngay người phụ trách', text: 'Không che giấu sự cố, cần thông tin kịp thời để xử lý và giảm hậu quả.' },
+          { title: 'Ghi nhận khách quan', text: 'Mô tả đúng thời gian, địa điểm, diễn biến, các hành động đã thực hiện và tình trạng hiện tại.' },
+          { title: 'Ưu tiên an toàn người bệnh', text: 'Tập trung xử trí an toàn trước, sau đó hoàn tất báo cáo theo quy trình nội bộ.' }
+        ]
+      }
+    ];
+
+    const quickItems = [
+      { icon: '🚑', title: 'Cấp cứu', desc: 'Tiếp nhận và phân luồng ban đầu', target: 'quy-trinh-cap-cuu' },
+      { icon: '🧼', title: 'Nhiễm khuẩn', desc: 'Vệ sinh tay và phòng hộ cơ bản', target: 'nhiem-khuan' },
+      { icon: '🕒', title: 'Ca trực', desc: 'Nhận trực và bàn giao', target: 'lich-truc' },
+      { icon: '☎️', title: 'Liên hệ nhanh', desc: 'Máy lẻ và đầu mối hỗ trợ', target: 'so-noi-bo' },
+      { icon: '🛏️', title: 'Nội trú', desc: 'Hướng dẫn cho người bệnh', target: 'quy-dinh-nguoi-benh' },
+      { icon: '⚠️', title: 'Sự cố y khoa', desc: 'Nguyên tắc báo cáo ban đầu', target: 'su-co-y-khoa' }
+    ];
+
+    const scheduleItems = [
+      { icon: '🗂️', title: 'Có thể bổ sung mục sơ đồ bệnh viện', text: 'Thêm sơ đồ tầng, sơ đồ khoa phòng, khu vực cấp cứu, nhà thuốc, xét nghiệm, thu viện phí.' },
+      { icon: '👨‍⚕️', title: 'Có thể tách riêng theo đối tượng', text: 'Ví dụ: sổ tay cho nhân viên, cho điều dưỡng, cho bác sĩ, cho học viên, cho người bệnh.' },
+      { icon: '📞', title: 'Có thể thêm gọi nhanh', text: 'Gắn nút gọi số nội bộ, mở Zalo/đầu mối hỗ trợ hoặc copy nhanh số liên hệ.' },
+      { icon: '📄', title: 'Có thể thêm quy trình chuẩn', text: 'Mỗi chuyên mục có thể mở thành bài đầy đủ với checklist, biểu mẫu, file PDF hoặc video hướng dẫn.' }
+    ];
+
+    const screenEls = [...document.querySelectorAll('.screen')];
+    const navButtons = [...document.querySelectorAll('.nav-item')];
+    const pageList = document.getElementById('pageList');
+    const featureList = document.getElementById('featureList');
+    const quickGrid = document.getElementById('quickGrid');
+    const pageCount = document.getElementById('pageCount');
+    const searchInput = document.getElementById('searchInput');
+    const scheduleList = document.getElementById('scheduleList');
+    const detailTitleTop = document.getElementById('detailTitleTop');
+    const detailBadge = document.getElementById('detailBadge');
+    const detailTitle = document.getElementById('detailTitle');
+    const detailDesc = document.getElementById('detailDesc');
+    const detailTags = document.getElementById('detailTags');
+    const detailItems = document.getElementById('detailItems');
+    const detailBackBtn = document.getElementById('detailBackBtn');
+    const searchResultsSection = document.getElementById('searchResultsSection');
+    const searchResults = document.getElementById('searchResults');
+    const searchCount = document.getElementById('searchCount');
+    const homeDefaultContent = document.getElementById('homeDefaultContent');
+
+    let currentScreen = 'cover';
+    let previousScreen = 'home';
+
+    function setActiveNav(screen) {
+      navButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.go === screen);
+      });
+    }
+
+    function goTo(screen) {
+      if (screen === currentScreen) return;
+      const currentEl = screenEls.find(el => el.dataset.screen === currentScreen);
+      const nextEl = screenEls.find(el => el.dataset.screen === screen);
+      if (!nextEl) return;
+
+      if (currentEl) {
+        currentEl.classList.remove('active');
+        currentEl.classList.add('exit-left');
+        setTimeout(() => currentEl.classList.remove('exit-left'), 250);
+      }
+
+      nextEl.classList.add('active');
+      previousScreen = currentScreen;
+      currentScreen = screen;
+      setActiveNav(screen);
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function highlightText(text, keyword) {
+      if (!keyword) return escapeHtml(text);
+      const safe = escapeHtml(text);
+      const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${escapedKeyword})`, 'ig');
+      return safe.replace(regex, '<mark>$1</mark>');
+    }
+
+    function renderQuickItems() {
+      quickGrid.innerHTML = quickItems.map(item => `
+        <button class="quick-card" data-detail="${item.target}">
+          <div class="quick-icon">${item.icon}</div>
+          <strong>${item.title}</strong>
+          <small>${item.desc}</small>
+        </button>
+      `).join('');
+    }
+
+    function renderFeatures(items = handbookPages) {
+      if (!items.length) {
+        featureList.innerHTML = '<div class="empty">Không tìm thấy nội dung phù hợp.</div>';
+        return;
+      }
+
+      featureList.innerHTML = items.slice(0, 6).map(item => `
+        <button class="feature-card" data-detail="${item.id}">
+          <div class="mini-icon">${item.icon}</div>
+          <div>
+            <h4>${item.title}</h4>
+            <p>${item.description}</p>
+          </div>
+          <div class="chev">›</div>
+        </button>
+      `).join('');
+    }
+
+    function renderPages(items = handbookPages) {
+      pageCount.textContent = `${items.length} mục`;
+      if (!items.length) {
+        pageList.innerHTML = '<div class="empty">Không có chuyên mục nào.</div>';
+        return;
+      }
+
+      pageList.innerHTML = items.map(item => `
+        <button class="page-card" data-detail="${item.id}">
+          <div class="page-icon">${item.icon}</div>
+          <div>
+            <h4>${item.title}</h4>
+            <p>${item.description}</p>
+          </div>
+          <div class="chev">›</div>
+        </button>
+      `).join('');
+    }
+
+    function renderSchedule() {
+      scheduleList.innerHTML = scheduleItems.map(item => `
+        <div class="schedule-card">
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;">
+            <div class="mini-icon">${item.icon}</div>
+            <div>
+              <h4>${item.title}</h4>
+              <p>${item.text}</p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openDetail(id) {
+      const item = handbookPages.find(page => page.id === id);
+      if (!item) return;
+
+      detailTitleTop.textContent = item.title;
+      detailBadge.textContent = item.category;
+      detailTitle.textContent = item.title;
+      detailDesc.textContent = item.description;
+      detailTags.innerHTML = item.tags.map(tag => `<span class="chip">${tag}</span>`).join('');
+      detailItems.innerHTML = item.items.map(entry => `
+        <div class="list-item">
+          <strong>${entry.title}</strong>
+          <p>${entry.text}</p>
+        </div>
+      `).join('');
+      goTo('detail');
+    }
+
+    function buildSearchIndex() {
+      const records = [];
+      handbookPages.forEach(page => {
+        records.push({
+          type: 'page',
+          id: page.id,
+          icon: page.icon,
+          category: page.category,
+          title: page.title,
+          excerpt: page.description,
+          raw: [page.title, page.category, page.description, page.tags.join(' ')].join(' ')
+        });
+        page.items.forEach((item, idx) => {
+          records.push({
+            type: 'item',
+            id: page.id,
+            icon: page.icon,
+            category: page.title,
+            title: item.title,
+            excerpt: item.text,
+            raw: [page.title, page.category, item.title, item.text, page.tags.join(' ')].join(' '),
+            order: idx
+          });
+        });
+      });
+      return records;
+    }
+
+    const searchIndex = buildSearchIndex();
+
+    function runSearch(keyword) {
+      const q = keyword.trim().toLowerCase();
+      if (!q) {
+        searchResultsSection.style.display = 'none';
+        homeDefaultContent.style.display = '';
+        renderPages(handbookPages);
+        renderFeatures(handbookPages);
+        return;
+      }
+
+      const matched = searchIndex.filter(record => record.raw.toLowerCase().includes(q));
+      searchCount.textContent = `${matched.length} kết quả`;
+      searchResultsSection.style.display = '';
+      homeDefaultContent.style.display = 'none';
+
+      if (!matched.length) {
+        searchResults.innerHTML = '<div class="empty">Không có nội dung khớp với từ khóa bạn tìm.</div>';
+        return;
+      }
+
+      searchResults.innerHTML = matched.slice(0, 12).map(record => `
+        <button class="search-result-card" data-detail="${record.id}">
+          <div class="search-meta">${record.type === 'page' ? 'Chuyên mục' : 'Nội dung con'} · ${record.category}</div>
+          <h4>${record.icon} ${highlightText(record.title, q)}</h4>
+          <p>${highlightText(record.excerpt, q)}</p>
+        </button>
+      `).join('');
+    }
+
+    document.addEventListener('click', (e) => {
+      const goBtn = e.target.closest('[data-go]');
+      if (goBtn) {
+        goTo(goBtn.dataset.go);
+        return;
+      }
+
+      const detailBtn = e.target.closest('[data-detail]');
+      if (detailBtn) {
+        openDetail(detailBtn.dataset.detail);
+      }
+    });
+
+    detailBackBtn.addEventListener('click', () => {
+      goTo(previousScreen === 'detail' ? 'pages' : previousScreen);
+    });
+
+    searchInput.addEventListener('input', (e) => {
+      runSearch(e.target.value);
+    });
+
+    renderQuickItems();
+    renderFeatures();
+    renderPages();
+    renderSchedule();
+    setActiveNav('home');
+  </script>
+</body>
+</html>
